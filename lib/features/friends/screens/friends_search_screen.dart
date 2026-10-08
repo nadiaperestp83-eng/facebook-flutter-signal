@@ -1,5 +1,7 @@
 import 'dart:math';
 
+import 'package:facebook/services/signal/hive_signal_protocol_store.dart';
+import 'package:facebook/services/signal/pairing_service.dart';
 import 'package:flutter/material.dart';
 
 import '../../../models/user.dart';
@@ -29,6 +31,46 @@ class FriendRequest {
 
 class _FriendsSearchScreenState extends State<FriendsSearchScreen> {
   final today = DateTime.now();
+
+  final _pairingService = PairingService(HiveSignalProtocolStore.instance);
+  bool _isPairing = false;
+
+  /// Pareia com alguém a partir do ID colado na busca (mesma ideia de
+  /// "adicionar pelo número" do Signal/WhatsApp — aqui o "número" é o
+  /// `user_id` do Supabase da outra pessoa, compartilhado fora do app).
+  /// Não cria nenhuma tela nova: só liga a busca já existente a um
+  /// pareamento real.
+  Future<void> _handleAddByCode() async {
+    final code = searchController.text.trim();
+    if (code.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Cole o código/ID da pessoa para adicionar.')),
+      );
+      return;
+    }
+
+    setState(() => _isPairing = true);
+    try {
+      final contact = await _pairingService.pairWithUser(code);
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('${contact.displayName} adicionado com sucesso!')),
+      );
+      searchController.clear();
+    } on PairingException catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(e.message)),
+      );
+    } catch (_) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Não foi possível adicionar. Verifique o código e tente novamente.')),
+      );
+    } finally {
+      if (mounted) setState(() => _isPairing = false);
+    }
+  }
 
   final friends = [
     FriendRequest(
@@ -191,6 +233,8 @@ class _FriendsSearchScreenState extends State<FriendsSearchScreen> {
                           ),
                           cursorColor: Colors.black,
                           textAlignVertical: TextAlignVertical.center,
+                          textInputAction: TextInputAction.search,
+                          onSubmitted: (_) => _handleAddByCode(),
                         ),
                       ),
                     ],
@@ -223,13 +267,19 @@ class _FriendsSearchScreenState extends State<FriendsSearchScreen> {
                 textAlign: TextAlign.center,
               ),
               IconButton(
-                onPressed: () {},
+                onPressed: _isPairing ? null : _handleAddByCode,
                 splashRadius: 20,
-                icon: const Icon(
-                  Icons.search_rounded,
-                  color: Colors.black,
-                  size: 30,
-                ),
+                icon: _isPairing
+                    ? const SizedBox(
+                        width: 20,
+                        height: 20,
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      )
+                    : const Icon(
+                        Icons.search_rounded,
+                        color: Colors.black,
+                        size: 30,
+                      ),
               )
             ],
           ),
