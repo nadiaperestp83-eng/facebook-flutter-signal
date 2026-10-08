@@ -1,0 +1,53 @@
+name: Build
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch: {}
+
+jobs:
+  build-android:
+    name: Build Android APK
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout código
+        uses: actions/checkout@v4
+
+      - name: Configurar Java (necessário para Gradle)
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+
+      - name: Configurar Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.24.0'
+          channel: 'stable'
+          cache: true
+
+      - name: Instalar dependências
+        run: flutter pub get
+
+      - name: Analisar código (flutter analyze)
+        run: flutter analyze --no-fatal-infos
+
+      - name: Rodar testes
+        run: flutter test
+        continue-on-error: true
+        # continue-on-error porque o projeto ainda não tem suíte de testes
+        # própria para a feed E2EE; remova esta linha assim que adicionar
+        # testes reais em test/, para o CI passar a falhar de verdade.
+
+      - name: Build APK (release)
+        run: flutter build apk --release
+
+      - name: Upload do APK como artefato
+        uses: actions/upload-artifact@v4
+        with:
+          name: app-release-apk
+          path: build/app/outputs/flutter-apk/app-release.apk
+          retention-days: 14
