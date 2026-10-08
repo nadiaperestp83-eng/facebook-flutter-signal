@@ -48,6 +48,7 @@ class FeedController extends GetxController {
 
   /// Puxar para atualizar: força uma varredura de expiração e recarrega.
   /// Não busca nada em nuvem — só reflete o estado atual do Hive local.
+  @override
   Future<void> refresh() async {
     await FeedExpirationService.instance.sweepNow();
     _loadFromHive();
