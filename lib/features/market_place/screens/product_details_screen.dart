@@ -5,7 +5,11 @@ import 'package:facebook/features/market_place/widgets/ralated_products.dart';
 import 'package:facebook/features/market_place/widgets/related_group.dart';
 import 'package:facebook/features/market_place/widgets/web_view_screen.dart';
 import 'package:facebook/models/product.dart';
-import 'package:flutter/material.dart';
+// O Flutter 3.24+ passou a exportar seu próprio `CarouselController` em
+// material.dart (widget Carousel do Material 3), que colide com o
+// `CarouselController` do pacote carousel_slider usado nesta tela.
+// `hide` resolve a ambiguidade mantendo o carousel_slider como o pretendido.
+import 'package:flutter/material.dart' hide CarouselController;
 
 class ProductDetailsScreen extends StatefulWidget {
   static const routeName = '/product-details';
