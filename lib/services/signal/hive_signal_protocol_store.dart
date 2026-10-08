@@ -23,6 +23,15 @@ class HiveSignalProtocolStore
         PreKeyStore,
         SignedPreKeyStore,
         SessionStore {
+  HiveSignalProtocolStore._internal();
+
+  /// Instância única usada em todo o app (IdentityService, PairingService,
+  /// RealtimeRelayService, FeedPublishService) — todos precisam enxergar
+  /// exatamente as mesmas boxes Hive, então nunca instancie esta classe
+  /// diretamente fora daqui.
+  static final HiveSignalProtocolStore instance =
+      HiveSignalProtocolStore._internal();
+
   static const _identityBoxName = 'signal_identity_box';
   static const _preKeyBoxName = 'signal_prekey_box';
   static const _signedPreKeyBoxName = 'signal_signed_prekey_box';
