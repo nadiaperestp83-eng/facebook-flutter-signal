@@ -86,7 +86,7 @@ class FeedPublishService {
     final isPreKeyMessage = ciphertext is PreKeySignalMessage;
 
     final channel = SupabaseBootstrap.client.channel('inbox:${contact.userId}');
-    await channel.subscribe();
+    channel.subscribe(); // síncrono: retorna o RealtimeChannel, não um Future
     await channel.sendBroadcastMessage(
       event: 'momento',
       payload: {
