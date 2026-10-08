@@ -1,7 +1,8 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 /// Bootstrap do Supabase, usado SOMENTE como:
-///   1. Auth anônima (identidade estável do dispositivo, sem tela de login);
+///   1. Auth por e-mail/senha (tela de login/cadastro em
+///      lib/features/auth/screens/login_screen.dart);
 ///   2. Tabela mínima `signal_public_keys` (chaves públicas de pareamento);
 ///   3. Realtime Broadcast (relé volátil, não persistido) para entregar
 ///      pacotes cifrados do Signal Protocol.
@@ -20,32 +21,28 @@ class SupabaseBootstrap {
   static SupabaseClient get client => Supabase.instance.client;
 
   /// Chamado uma vez no bootstrap do app (main.dart), depois do Hive.
+  /// NÃO faz login nenhum — isso agora é responsabilidade exclusiva da
+  /// tela de login/cadastro (AuthService + LoginScreen), decidida pelo
+  /// AuthGate a partir de `client.auth.onAuthStateChange`.
   static Future<void> init() async {
     await Supabase.initialize(
       url: supabaseUrl,
       anonKey: supabaseAnonKey,
-      // Sem GoTrue persistSession customizado: o padrão já persiste a
-      // sessão localmente, então a identidade anônima sobrevive a
-      // reaberturas do app no mesmo dispositivo.
+      // O padrão do supabase_flutter já persiste a sessão localmente
+      // (via o próprio GoTrue), então um login feito uma vez sobrevive a
+      // reaberturas do app no mesmo dispositivo, sem precisar logar de novo.
     );
-
-    // Garante uma identidade anônima estável sem exigir nenhuma tela de
-    // login — o usuário já tem um "perfil" local (UserProvider); apenas
-    // amarramos esse perfil a um auth.uid() estável no Supabase.
-    final session = client.auth.currentSession;
-    if (session == null) {
-      await client.auth.signInAnonymously();
-    }
   }
 
-  /// uid estável do dispositivo/usuário atual. Lança se chamado antes do
-  /// signInAnonymously completar (não deve acontecer se init() foi aguardado).
+  /// uid estável do usuário logado. Lança se chamado sem sessão ativa —
+  /// todo o código da Fase 2/3 que usa isto só roda depois do AuthGate
+  /// confirmar sessão válida, então isso não deve acontecer em uso normal.
   static String get currentUserId {
     final user = client.auth.currentUser;
     if (user == null) {
       throw StateError(
-        'SupabaseBootstrap.init() precisa terminar (signInAnonymously) '
-        'antes de acessar currentUserId.',
+        'Nenhum usuário logado. currentUserId só pode ser usado depois '
+        'do login (ver AuthGate).',
       );
     }
     return user.id;
