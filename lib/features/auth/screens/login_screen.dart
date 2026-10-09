@@ -43,11 +43,31 @@ class _LoginScreenState extends State<LoginScreen> {
 
     try {
       if (_isSignUpMode) {
-        await AuthService.instance.signUp(
+        final loggedInImmediately = await AuthService.instance.signUp(
           email: _emailController.text,
           password: _passwordController.text,
           displayName: _nameController.text,
         );
+        if (!loggedInImmediately) {
+          // Supabase está com "Confirm email" ativado (padrão de fábrica):
+          // a conta foi criada, mas só existe sessão depois de clicar no
+          // link enviado por e-mail. Não há nada quebrado — só avisamos.
+          setState(() {
+            _errorMessage = null;
+            _isSignUpMode = false;
+          });
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text(
+                  'Conta criada! Confirme seu e-mail (${_emailController.text.trim()}) antes de entrar.',
+                ),
+                duration: const Duration(seconds: 6),
+              ),
+            );
+          }
+          return;
+        }
       } else {
         await AuthService.instance.signIn(
           email: _emailController.text,
