@@ -12,11 +12,17 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 class SupabaseBootstrap {
   SupabaseBootstrap._();
 
-  // TODO: substitua pelas credenciais do seu projeto Supabase
-  // (Project Settings > API). A anonKey é pública por design do Supabase,
-  // mas nunca coloque a service_role key no app.
-  static const String supabaseUrl = 'https://SEU-PROJETO.supabase.co';
-  static const String supabaseAnonKey = 'SUA_ANON_KEY_AQUI';
+  // Lidas em tempo de COMPILAÇÃO via --dart-define (ver .github/workflows/build.yml
+  // e as instruções abaixo para rodar localmente). Nunca commitamos a URL/anonKey
+  // reais no código-fonte — ficam só nos Secrets do GitHub / na sua máquina.
+  //
+  // Para rodar localmente (flutter run), passe assim:
+  //   flutter run \
+  //     --dart-define=SUPABASE_URL=https://SEU-PROJETO.supabase.co \
+  //     --dart-define=SUPABASE_ANON_KEY=SUA_ANON_KEY_AQUI
+  static const String supabaseUrl = String.fromEnvironment('SUPABASE_URL');
+  static const String supabaseAnonKey =
+      String.fromEnvironment('SUPABASE_ANON_KEY');
 
   static SupabaseClient get client => Supabase.instance.client;
 
@@ -25,6 +31,14 @@ class SupabaseBootstrap {
   /// tela de login/cadastro (AuthService + LoginScreen), decidida pelo
   /// AuthGate a partir de `client.auth.onAuthStateChange`.
   static Future<void> init() async {
+    if (supabaseUrl.isEmpty || supabaseAnonKey.isEmpty) {
+      throw StateError(
+        'SUPABASE_URL/SUPABASE_ANON_KEY não foram definidos. '
+        'Rode com --dart-define=SUPABASE_URL=... --dart-define=SUPABASE_ANON_KEY=... '
+        '(localmente) ou configure os Secrets do GitHub (CI). '
+        'Veja os comentários no topo desta classe.',
+      );
+    }
     await Supabase.initialize(
       url: supabaseUrl,
       anonKey: supabaseAnonKey,
