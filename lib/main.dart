@@ -19,6 +19,33 @@ import 'services/signal/hive_signal_protocol_store.dart';
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
+  // Em release, o Flutter por padrão troca qualquer widget que quebrou
+  // durante o build por uma caixa CINZA SEM TEXTO — é exatamente o "tudo
+  // cinza" que você está vendo, só que o erro pode estar em QUALQUER
+  // widget da árvore, não só no feed. Isso aqui faz o erro real aparecer
+  // na tela, em qualquer app, mesmo no release/APK instalado no celular.
+  // Depois que acharmos e corrigirmos todos os bugs, é só remover este
+  // bloco (ou trocar por algo mais discreto).
+  ErrorWidget.builder = (FlutterErrorDetails details) {
+    return Material(
+      color: Colors.white,
+      child: SingleChildScrollView(
+        padding: const EdgeInsets.all(16),
+        child: Text(
+          'ERRO NESTE WIDGET:\n\n${details.exceptionAsString()}\n\n${details.stack}',
+          style: const TextStyle(color: Colors.red, fontSize: 12),
+        ),
+      ),
+    );
+  };
+
+  // Captura erros que acontecem fora do build (ex: dentro de initState,
+  // callbacks assíncronos) e manda pro console também — útil se você
+  // conseguir rodar `flutter logcat`/`adb logcat` depois.
+  FlutterError.onError = (FlutterErrorDetails details) {
+    FlutterError.presentError(details);
+  };
+
   // --- Hive: feed efêmero + contatos + store do Signal Protocol ---
   await Hive.initFlutter();
   if (!Hive.isAdapterRegistered(HiveBoxes.feedPostTypeId)) {
