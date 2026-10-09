@@ -961,11 +961,23 @@ class _NewsFeedScreenState extends State<NewsFeedScreen> {
             // Momentos reais (E2EE, locais, cronológicos — ver
             // FeedController) aparecem primeiro; os posts estáticos de
             // demonstração do fork continuam logo abaixo, intactos.
-            final livePosts = Get.find<FeedController>()
-                .posts
-                .map(_mapFeedPostToPost)
-                .toList();
-            final allPosts = [...livePosts, ...posts];
+            //
+            // Blindado com try/catch: se qualquer momento real vier com um
+            // payload malformado (ou o FeedController não estiver pronto
+            // por algum motivo), o feed NUNCA mais fica em branco — na
+            // pior hipótese, mostra só os posts estáticos de demonstração,
+            // que é o estado anterior ao Fase 4.
+            List<Post> allPosts;
+            try {
+              final livePosts = Get.find<FeedController>()
+                  .posts
+                  .map(_mapFeedPostToPost)
+                  .toList();
+              allPosts = [...livePosts, ...posts];
+            } catch (e, stack) {
+              debugPrint('[FeedController] erro ao montar o feed real: $e\n$stack');
+              allPosts = posts;
+            }
 
             return Column(
               children: allPosts
