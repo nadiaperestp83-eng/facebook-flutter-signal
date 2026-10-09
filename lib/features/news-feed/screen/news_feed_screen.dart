@@ -103,9 +103,11 @@ class _NewsFeedScreenState extends State<NewsFeedScreen> {
                                   'shareWith': 'Công khai',
                                 },
                               );
-                              if (mounted) Navigator.of(sheetContext).pop();
+                              if (sheetContext.mounted) {
+                                Navigator.of(sheetContext).pop();
+                              }
                             } catch (_) {
-                              if (mounted) {
+                              if (context.mounted) {
                                 ScaffoldMessenger.of(context).showSnackBar(
                                   const SnackBar(
                                     content: Text(
