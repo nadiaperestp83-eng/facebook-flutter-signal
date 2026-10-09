@@ -1,3 +1,4 @@
+import 'package:facebook/constants/global_variables.dart';
 import 'package:facebook/features/news-feed/widgets/add_story_card.dart';
 import 'package:facebook/features/news-feed/widgets/post_card.dart';
 import 'package:facebook/features/news-feed/widgets/story_card.dart';
@@ -5,6 +6,9 @@ import 'package:facebook/models/post.dart';
 import 'package:facebook/models/story.dart';
 import 'package:facebook/models/user.dart';
 import 'package:facebook/providers/user_provider.dart';
+import 'package:facebook/services/auth_service.dart';
+import 'package:facebook/services/feed_publish_service.dart';
+import 'package:facebook/services/signal/hive_signal_protocol_store.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
@@ -19,6 +23,121 @@ class NewsFeedScreen extends StatefulWidget {
 
 class _NewsFeedScreenState extends State<NewsFeedScreen> {
   Color colorNewPost = Colors.transparent;
+  final _feedPublishService = FeedPublishService(HiveSignalProtocolStore.instance);
+  bool _isPublishing = false;
+
+  /// Abre a composição do momento. Não existe nenhuma tela de "criar post"
+  /// no fork original, então reaproveito o mesmo padrão de
+  /// `showModalBottomSheet` já usado em outras telas do app (ex: o menu de
+  /// ordenação em friends_search_screen.dart) em vez de desenhar uma tela
+  /// nova — fica consistente com o resto do app e é só o mínimo necessário
+  /// para ter uma caixa de texto real.
+  void _openComposeSheet(User currentUser) {
+    final textController = TextEditingController();
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+      ),
+      builder: (sheetContext) {
+        return Padding(
+          padding: EdgeInsets.only(
+            left: 16,
+            right: 16,
+            top: 16,
+            bottom: MediaQuery.of(sheetContext).viewInsets.bottom + 16,
+          ),
+          child: StatefulBuilder(
+            builder: (sheetContext, setSheetState) {
+              return Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Row(
+                    children: [
+                      CircleAvatar(
+                        backgroundImage: AssetImage(currentUser.avatar),
+                        radius: 20,
+                      ),
+                      const SizedBox(width: 10),
+                      Text(
+                        currentUser.name,
+                        style: const TextStyle(fontWeight: FontWeight.bold),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 12),
+                  TextField(
+                    controller: textController,
+                    autofocus: true,
+                    maxLines: 5,
+                    minLines: 3,
+                    decoration: const InputDecoration(
+                      hintText: 'Bạn đang nghĩ gì?',
+                      border: InputBorder.none,
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  ElevatedButton(
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: GlobalVariables.secondaryColor,
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(vertical: 12),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                    ),
+                    onPressed: _isPublishing
+                        ? null
+                        : () async {
+                            final text = textController.text.trim();
+                            if (text.isEmpty) return;
+                            setSheetState(() => _isPublishing = true);
+                            try {
+                              await _feedPublishService.publish(
+                                senderDisplayName: AuthService.instance.displayName,
+                                contentJson: {
+                                  'content': text,
+                                  'time': 'agora',
+                                  'shareWith': 'Công khai',
+                                },
+                              );
+                              if (mounted) Navigator.of(sheetContext).pop();
+                            } catch (_) {
+                              if (mounted) {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  const SnackBar(
+                                    content: Text(
+                                      'Não foi possível publicar o momento. Tente novamente.',
+                                    ),
+                                  ),
+                                );
+                              }
+                            } finally {
+                              if (mounted) setState(() => _isPublishing = false);
+                            }
+                          },
+                    child: _isPublishing
+                        ? const SizedBox(
+                            height: 18,
+                            width: 18,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                            ),
+                          )
+                        : const Text('Đăng', style: TextStyle(fontWeight: FontWeight.bold)),
+                  ),
+                ],
+              );
+            },
+          ),
+        );
+      },
+    );
+  }
+
   final stories = [
     Story(
       user: User(
@@ -716,6 +835,7 @@ class _NewsFeedScreenState extends State<NewsFeedScreen> {
                       setState(() {
                         colorNewPost = Colors.transparent;
                       });
+                      _openComposeSheet(user);
                     },
                     onTapUp: (tapUpDetails) {
                       setState(() {
