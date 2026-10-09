@@ -1306,30 +1306,6 @@ class _MenuScreenState extends State<MenuScreen> {
                                   ),
                                 ]),
                             child: const Shortcut(
-                                img: 'assets/images/menu/video.png',
-                                title: 'Video'),
-                          ),
-                          Container(
-                            width: double.infinity,
-                            margin: const EdgeInsets.all(5),
-                            padding: const EdgeInsets.all(10),
-                            decoration: BoxDecoration(
-                                color: Colors.white,
-                                shape: BoxShape.rectangle,
-                                border: Border.all(
-                                  color: Colors.black12,
-                                  width: 0.5,
-                                ),
-                                borderRadius: BorderRadius.circular(10),
-                                boxShadow: [
-                                  BoxShadow(
-                                    color: Colors.black.withOpacity(0.2),
-                                    blurRadius: 20,
-                                    offset: const Offset(0, 0),
-                                    spreadRadius: 0,
-                                  ),
-                                ]),
-                            child: const Shortcut(
                                 img: 'assets/images/menu/feed.png',
                                 title: 'Bảng feed'),
                           ),
@@ -1389,10 +1365,6 @@ class _MenuScreenState extends State<MenuScreen> {
                                 ),
                               ],
                             ),
-                            child: const Shortcut(
-                                img: 'assets/images/menu/dating.png',
-                                title: 'Hẹn hò'),
-                          ),
                           Container(
                             width: double.infinity,
                             margin: const EdgeInsets.all(5),
@@ -1414,10 +1386,6 @@ class _MenuScreenState extends State<MenuScreen> {
                                 ),
                               ],
                             ),
-                            child: const Shortcut(
-                                img: 'assets/images/menu/market.png',
-                                title: 'Marketplace'),
-                          ),
                           Container(
                             width: double.infinity,
                             margin: const EdgeInsets.all(5),
@@ -1439,10 +1407,6 @@ class _MenuScreenState extends State<MenuScreen> {
                                 ),
                               ],
                             ),
-                            child: const Shortcut(
-                                img: 'assets/images/menu/event.png',
-                                title: 'Sự kiện'),
-                          ),
                           if (MenuScreen.viewMoreShortcuts)
                             for (int i = 1; i < shortcuts.length; i += 2)
                               shortcuts[i],
