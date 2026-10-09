@@ -5,11 +5,7 @@ import 'package:facebook/features/market_place/widgets/ralated_products.dart';
 import 'package:facebook/features/market_place/widgets/related_group.dart';
 import 'package:facebook/features/market_place/widgets/web_view_screen.dart';
 import 'package:facebook/models/product.dart';
-// O Flutter 3.24+ passou a exportar seu próprio `CarouselController` em
-// material.dart (widget Carousel do Material 3), que colide com o
-// `CarouselController` do pacote carousel_slider usado nesta tela.
-// `hide` resolve a ambiguidade mantendo o carousel_slider como o pretendido.
-import 'package:flutter/material.dart' hide CarouselController;
+import 'package:flutter/material.dart';
 
 class ProductDetailsScreen extends StatefulWidget {
   static const routeName = '/product-details';
@@ -21,7 +17,9 @@ class ProductDetailsScreen extends StatefulWidget {
 }
 
 class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
-  final CarouselController carouselController = CarouselController();
+  // carousel_slider 5.x renomeou CarouselController -> CarouselSliderController
+  // justamente para parar de colidir com o CarouselController nativo do Flutter.
+  final CarouselSliderController carouselController = CarouselSliderController();
   final TextEditingController messageController =
       TextEditingController(text: 'Mặt hàng này còn không?');
   int _current = 0;
