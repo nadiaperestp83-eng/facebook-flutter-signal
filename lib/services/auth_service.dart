@@ -28,7 +28,14 @@ class AuthService {
   /// [displayName] é gravado em `user_metadata.full_name` e depois lido
   /// pelo IdentityService para publicar o bundle público do Signal com
   /// esse nome — sem precisar de tabela extra de perfis.
-  Future<void> signUp({
+  ///
+  /// Retorna `true` se a conta já ficou com sessão ativa (login imediato);
+  /// `false` se o Supabase está configurado para exigir confirmação de
+  /// e-mail — nesse caso NENHUMA sessão existe ainda e o AuthGate vai
+  /// continuar mostrando a LoginScreen até a pessoa clicar no link do
+  /// e-mail (isso é esperado, não é bug). A LoginScreen usa esse retorno
+  /// pra avisar o usuário disso explicitamente, em vez de parecer travada.
+  Future<bool> signUp({
     required String email,
     required String password,
     required String displayName,
@@ -42,6 +49,7 @@ class AuthService {
       if (res.user == null) {
         throw AuthException('Não foi possível criar a conta. Tente novamente.');
       }
+      return res.session != null;
     } on AuthApiException catch (e) {
       throw AuthException(_translate(e.message));
     }
