@@ -24,7 +24,7 @@ dependencies:
   path_provider: ^2.1.1
   get: ^4.6.6
   supabase_flutter: ^2.3.4
-  libsignal_protocol_dart: ^0.8.1
+  libsignal_protocol_dart: ^0.7.1 
   uuid: ^4.2.2
 
 dev_dependencies:
