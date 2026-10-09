@@ -88,6 +88,12 @@ class _PostCardState extends State<PostCard> {
   }
 
   _calculateImageDimension() async {
+    // Posts sem imagem (ex: os momentos efêmeros E2EE, que são só texto)
+    // não tinham essa checagem — widget.post.image![0] quebrava com
+    // "Null check operator used on a null value" sempre que image era nulo.
+    if (widget.post.image == null || widget.post.image!.isEmpty) {
+      return;
+    }
     Completer<Size> completer = Completer();
     Image image = Image.asset(widget.post.image![0]);
     image.image.resolve(const ImageConfiguration()).addListener(
