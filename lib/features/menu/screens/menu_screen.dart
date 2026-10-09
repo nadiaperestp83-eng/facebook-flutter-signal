@@ -1344,69 +1344,6 @@ class _MenuScreenState extends State<MenuScreen> {
                                 img: 'assets/images/menu/saved.png',
                                 title: 'Đã lưu'),
                           ),
-                          Container(
-                            width: double.infinity,
-                            margin: const EdgeInsets.all(5),
-                            padding: const EdgeInsets.all(10),
-                            decoration: BoxDecoration(
-                              color: Colors.white,
-                              shape: BoxShape.rectangle,
-                              border: Border.all(
-                                color: Colors.black12,
-                                width: 0.5,
-                              ),
-                              borderRadius: BorderRadius.circular(10),
-                              boxShadow: [
-                                BoxShadow(
-                                  color: Colors.black.withOpacity(0.2),
-                                  blurRadius: 20,
-                                  offset: const Offset(0, 0),
-                                  spreadRadius: 0,
-                                ),
-                              ],
-                            ),
-                          Container(
-                            width: double.infinity,
-                            margin: const EdgeInsets.all(5),
-                            padding: const EdgeInsets.all(10),
-                            decoration: BoxDecoration(
-                              color: Colors.white,
-                              shape: BoxShape.rectangle,
-                              border: Border.all(
-                                color: Colors.black12,
-                                width: 0.5,
-                              ),
-                              borderRadius: BorderRadius.circular(10),
-                              boxShadow: [
-                                BoxShadow(
-                                  color: Colors.black.withOpacity(0.2),
-                                  blurRadius: 20,
-                                  offset: const Offset(0, 0),
-                                  spreadRadius: 0,
-                                ),
-                              ],
-                            ),
-                          Container(
-                            width: double.infinity,
-                            margin: const EdgeInsets.all(5),
-                            padding: const EdgeInsets.all(10),
-                            decoration: BoxDecoration(
-                              color: Colors.white,
-                              shape: BoxShape.rectangle,
-                              border: Border.all(
-                                color: Colors.black12,
-                                width: 0.5,
-                              ),
-                              borderRadius: BorderRadius.circular(10),
-                              boxShadow: [
-                                BoxShadow(
-                                  color: Colors.black.withOpacity(0.2),
-                                  blurRadius: 20,
-                                  offset: const Offset(0, 0),
-                                  spreadRadius: 0,
-                                ),
-                              ],
-                            ),
                           if (MenuScreen.viewMoreShortcuts)
                             for (int i = 1; i < shortcuts.length; i += 2)
                               shortcuts[i],
