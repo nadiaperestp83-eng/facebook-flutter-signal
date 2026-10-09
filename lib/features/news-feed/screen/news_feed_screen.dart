@@ -1,7 +1,11 @@
+import 'dart:convert';
+
 import 'package:facebook/constants/global_variables.dart';
+import 'package:facebook/controllers/feed_controller.dart';
 import 'package:facebook/features/news-feed/widgets/add_story_card.dart';
 import 'package:facebook/features/news-feed/widgets/post_card.dart';
 import 'package:facebook/features/news-feed/widgets/story_card.dart';
+import 'package:facebook/models/feed_post_hive.dart';
 import 'package:facebook/models/post.dart';
 import 'package:facebook/models/story.dart';
 import 'package:facebook/models/user.dart';
@@ -10,6 +14,7 @@ import 'package:facebook/services/auth_service.dart';
 import 'package:facebook/services/feed_publish_service.dart';
 import 'package:facebook/services/signal/hive_signal_protocol_store.dart';
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
 import 'package:provider/provider.dart';
 
 class NewsFeedScreen extends StatefulWidget {
@@ -786,6 +791,41 @@ class _NewsFeedScreenState extends State<NewsFeedScreen> {
     ),
   ];
 
+  /// Reconstrói um `Post` (modelo já usado pela UI/PostCard) a partir de um
+  /// momento efêmero vindo do Hive (local, já decifrado). Sem vídeo — só
+  /// texto, como combinado — e com avatar genérico quando o contato não
+  /// publicou um (o fork só suporta AssetImage local, não tem upload real
+  /// de foto de perfil ainda).
+  Post _mapFeedPostToPost(FeedPostHive hive) {
+    String content = '';
+    String shareWith = 'friends';
+    try {
+      final decoded = jsonDecode(hive.payload) as Map<String, dynamic>;
+      content = (decoded['content'] as String?) ?? '';
+      shareWith = (decoded['shareWith'] as String?) ?? 'friends';
+    } catch (_) {
+      // payload em formato inesperado: mostra vazio em vez de quebrar o feed.
+    }
+
+    return Post(
+      user: User(
+        name: hive.senderName,
+        avatar: hive.senderAvatar ?? 'assets/images/user/doraemon.jpg',
+      ),
+      time: _relativeTime(hive.publishedAt),
+      shareWith: shareWith,
+      content: content,
+    );
+  }
+
+  String _relativeTime(DateTime publishedAt) {
+    final diff = DateTime.now().difference(publishedAt);
+    if (diff.inMinutes < 1) return 'agora';
+    if (diff.inMinutes < 60) return '${diff.inMinutes} phút';
+    if (diff.inHours < 24) return '${diff.inHours} giờ';
+    return '${diff.inDays} ngày';
+  }
+
   ScrollController scrollController =
       ScrollController(initialScrollOffset: NewsFeedScreen.offset);
 
@@ -917,23 +957,34 @@ class _NewsFeedScreenState extends State<NewsFeedScreen> {
             height: 5,
             color: Colors.black26,
           ),
-          Column(
-            children: posts
-                .map((e) => Column(
-                      children: [
-                        const SizedBox(
-                          height: 10,
-                        ),
-                        PostCard(post: e),
-                        Container(
-                          width: double.infinity,
-                          height: 5,
-                          color: Colors.black26,
-                        ),
-                      ],
-                    ))
-                .toList(),
-          ),
+          Obx(() {
+            // Momentos reais (E2EE, locais, cronológicos — ver
+            // FeedController) aparecem primeiro; os posts estáticos de
+            // demonstração do fork continuam logo abaixo, intactos.
+            final livePosts = Get.find<FeedController>()
+                .posts
+                .map(_mapFeedPostToPost)
+                .toList();
+            final allPosts = [...livePosts, ...posts];
+
+            return Column(
+              children: allPosts
+                  .map((e) => Column(
+                        children: [
+                          const SizedBox(
+                            height: 10,
+                          ),
+                          PostCard(post: e),
+                          Container(
+                            width: double.infinity,
+                            height: 5,
+                            color: Colors.black26,
+                          ),
+                        ],
+                      ))
+                  .toList(),
+            );
+          }),
         ],
       ),
     );
