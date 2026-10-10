@@ -1,11 +1,15 @@
 import 'package:facebook/features/auth/screens/login_screen.dart';
 import 'package:facebook/features/home/screens/home_screen.dart';
+import 'package:facebook/providers/user_provider.dart';
 import 'package:facebook/services/auth_service.dart';
+import 'package:facebook/services/contact_avatars_repository.dart';
 import 'package:facebook/services/contacts_repository.dart';
+import 'package:facebook/services/own_avatar_repository.dart';
 import 'package:facebook/services/realtime_relay_service.dart';
 import 'package:facebook/services/signal/hive_signal_protocol_store.dart';
 import 'package:facebook/services/signal/identity_service.dart';
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 /// Porta de entrada do app. Ouve `AuthService.onAuthStateChange` e decide:
@@ -38,6 +42,17 @@ class _AuthGateState extends State<AuthGate> {
       await RealtimeRelayService(HiveSignalProtocolStore.instance)
           .startListening();
       await ContactsRepository.instance.init();
+      await OwnAvatarRepository.instance.init();
+      await ContactAvatarsRepository.instance.init();
+
+      // Troca o nome mock pelo nome real da conta logada em todo o app
+      // (UserProvider é usado globalmente onde "isMine"/usuário atual
+      // aparece).
+      if (mounted) {
+        Provider.of<UserProvider>(context, listen: false)
+            .updateNameFromAuth(AuthService.instance.displayName);
+      }
+
       _bootstrappedForUserId = userId;
       _bootstrapError = null;
     } catch (e) {
