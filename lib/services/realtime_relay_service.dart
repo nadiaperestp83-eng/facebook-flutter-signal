@@ -6,6 +6,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../core/supabase/supabase_bootstrap.dart';
 import '../models/feed_post_hive.dart';
+import 'contact_avatars_repository.dart';
 import 'local_feed_repository.dart';
 import 'signal/hive_signal_protocol_store.dart';
 import 'signal/pairing_service.dart';
@@ -39,6 +40,10 @@ class RealtimeRelayService {
         .onBroadcast(
           event: 'momento',
           callback: (payload) => _handleIncoming(payload),
+        )
+        .onBroadcast(
+          event: 'avatar',
+          callback: (payload) => _handleIncomingAvatar(payload),
         )
         .subscribe();
   }
@@ -99,6 +104,35 @@ class RealtimeRelayService {
       // Pacote corrompido, de um remetente sem sessão válida, ou campo
       // ausente: descartamos silenciosamente. Um relé não deve derrubar
       // o listener do app por causa de 1 pacote ruim.
+      return;
+    }
+  }
+
+  Future<void> _handleIncomingAvatar(Map<String, dynamic> payload) async {
+    try {
+      final senderId = payload['sender_id'] as String;
+      final messageType = payload['type'] as String;
+      final body = base64Decode(payload['body'] as String);
+
+      final remoteAddress = SignalProtocolAddress(senderId, kSignalDeviceId);
+      final sessionCipher = SessionCipher(
+        _store,
+        _store,
+        _store,
+        _store,
+        remoteAddress,
+      );
+
+      final Uint8List plaintext;
+      if (messageType == 'prekey') {
+        plaintext = await sessionCipher.decrypt(PreKeySignalMessage(body));
+      } else {
+        plaintext = await sessionCipher
+            .decryptFromSignal(SignalMessage.fromSerialized(body));
+      }
+
+      await ContactAvatarsRepository.instance.setBytes(senderId, plaintext);
+    } catch (_) {
       return;
     }
   }
