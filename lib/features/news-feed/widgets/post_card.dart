@@ -1378,7 +1378,20 @@ class _PostCardState extends State<PostCard> {
                                     )
                                   ],
                                 )
-                              : Container(
+                              : ((widget.post.image == null ||
+                                          widget.post.image!.isEmpty) &&
+                                      (widget.post.video == null ||
+                                          widget.post.video!.isEmpty))
+                                  // Post sem imagem e sem vídeo (ex: os
+                                  // momentos efêmeros E2EE, só texto): essa
+                                  // branch "catch-all" assumia que sempre
+                                  // havia pelo menos 1 imagem e quebrava com
+                                  // "Null check operator used on a null
+                                  // value". Sem mídia, não renderiza nada
+                                  // aqui — o texto já foi mostrado acima por
+                                  // PostContent.
+                                  ? const SizedBox.shrink()
+                                  : Container(
                                   width: double.infinity,
                                   padding: const EdgeInsets.all(20),
                                   color: Colors.grey.withOpacity(0.5),
