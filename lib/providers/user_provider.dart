@@ -5,7 +5,7 @@ import '../models/post.dart';
 import '../models/story.dart';
 
 class UserProvider extends ChangeNotifier {
-  final User _user = User(
+  User _user = User(
     name: 'Lê Công Đắt',
     avatar: 'assets/images/user/lcd.jpg',
     educations: [
@@ -173,4 +173,14 @@ class UserProvider extends ChangeNotifier {
     ],
   );
   User get user => _user;
+
+  /// Chamado pelo AuthGate assim que a sessão do Supabase é confirmada —
+  /// troca o nome mock ("Lê Công Đắt") pelo nome real da conta logada.
+  /// Todo o resto do perfil (curso, cidade, GitHub, seguidores, etc.)
+  /// continua mock por enquanto, como combinado.
+  void updateNameFromAuth(String realName) {
+    if (realName.trim().isEmpty || realName == _user.name) return;
+    _user = _user.copyWith(name: realName);
+    notifyListeners();
+  }
 }
