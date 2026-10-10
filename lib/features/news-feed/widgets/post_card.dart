@@ -879,7 +879,14 @@ class _PostCardState extends State<PostCard> {
                   padding: const EdgeInsets.symmetric(horizontal: 5),
                   child: PostContent(text: widget.post.content!),
                 ),
-              ((widget.post.video != null ? widget.post.video!.length : 0) +
+              ((widget.post.image == null || widget.post.image!.isEmpty) &&
+                      (widget.post.video == null || widget.post.video!.isEmpty))
+                  // Post sem imagem/vídeo (momentos E2EE, só texto): pula
+                  // TODA a lógica de layout de mídia abaixo (que tem vários
+                  // pontos assumindo pelo menos 1 imagem) em vez de só
+                  // blindar o último pedaço dela.
+                  ? const SizedBox.shrink()
+                  : ((widget.post.video != null ? widget.post.video!.length : 0) +
                           (widget.post.image != null
                               ? widget.post.image!.length
                               : 0) ==
