@@ -967,26 +967,41 @@ class _NewsFeedScreenState extends State<NewsFeedScreen> {
             // por algum motivo), o feed NUNCA mais fica em branco — na
             // pior hipótese, mostra só os posts estáticos de demonstração,
             // que é o estado anterior ao Fase 4.
-            List<Post> allPosts;
+            // Cada entrada carrega um ID ESTÁVEL junto do Post, usado como
+            // Key do PostCard logo abaixo. Sem isso, o Flutter reaproveita
+            // o State de um PostCard pela POSIÇÃO na lista (não pelo post),
+            // e quando um momento novo entra na frente da lista, cada card
+            // existente passa a renderizar dados de outro post em cima de
+            // um State (alturas, ícones de reação) calculado pro post
+            // antigo daquela posição — causa de vários dos erros recentes.
+            List<MapEntry<String, Post>> allEntries;
             try {
-              final livePosts = Get.find<FeedController>()
+              final liveEntries = Get.find<FeedController>()
                   .posts
-                  .map(_mapFeedPostToPost)
+                  .map((hive) => MapEntry(hive.id, _mapFeedPostToPost(hive)))
                   .toList();
-              allPosts = [...livePosts, ...posts];
+              final staticEntries = [
+                for (int i = 0; i < posts.length; i++)
+                  MapEntry('static_$i', posts[i]),
+              ];
+              allEntries = [...liveEntries, ...staticEntries];
             } catch (e, stack) {
               debugPrint('[FeedController] erro ao montar o feed real: $e\n$stack');
-              allPosts = posts;
+              allEntries = [
+                for (int i = 0; i < posts.length; i++)
+                  MapEntry('static_$i', posts[i]),
+              ];
             }
 
             return Column(
-              children: allPosts
-                  .map((e) => Column(
+              children: allEntries
+                  .map((entry) => Column(
+                        key: ValueKey(entry.key),
                         children: [
                           const SizedBox(
                             height: 10,
                           ),
-                          PostCard(post: e),
+                          PostCard(key: ValueKey(entry.key), post: entry.value),
                           Container(
                             width: double.infinity,
                             height: 5,
