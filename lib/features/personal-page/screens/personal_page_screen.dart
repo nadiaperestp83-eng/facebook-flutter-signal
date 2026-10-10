@@ -1,8 +1,13 @@
 import 'dart:math';
+import 'dart:typed_data';
 
 import 'package:facebook/features/news-feed/widgets/story_card.dart';
 import 'package:facebook/providers/user_provider.dart';
+import 'package:facebook/services/avatar_publish_service.dart';
+import 'package:facebook/services/own_avatar_repository.dart';
+import 'package:facebook/services/signal/hive_signal_protocol_store.dart';
 import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
 
 import '../../../models/user.dart';
@@ -22,6 +27,61 @@ class _PersonalPageScreenState extends State<PersonalPageScreen> {
   final Random random = Random();
   bool isMine = false;
   int mutualFriends = 0;
+
+  // Foto de perfil real (bytes locais, Hive) — fica null se o usuário
+  // nunca escolheu uma, caindo de volta pro asset mock de sempre.
+  Uint8List? _ownAvatarBytes;
+  bool _isPickingAvatar = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _ownAvatarBytes = OwnAvatarRepository.instance.getBytes();
+  }
+
+  /// Abre a galeria, salva a foto localmente (Hive) e manda cifrada pra
+  /// cada contato pareado — sem nenhum upload pra tabela/bucket do
+  /// Supabase em texto plano.
+  Future<void> _pickAndSetAvatar() async {
+    if (_isPickingAvatar) return;
+    setState(() => _isPickingAvatar = true);
+    try {
+      final picked = await ImagePicker().pickImage(
+        source: ImageSource.gallery,
+        maxWidth: 1024,
+        imageQuality: 85,
+      );
+      if (picked == null) return;
+
+      final bytes = await picked.readAsBytes();
+      await OwnAvatarRepository.instance.setBytes(bytes);
+
+      // Dispara em segundo plano: não trava a UI esperando a cifragem +
+      // envio pra cada contato.
+      AvatarPublishService(HiveSignalProtocolStore.instance)
+          .publishToAllContacts(bytes)
+          .catchError((_) {});
+
+      if (mounted) setState(() => _ownAvatarBytes = bytes);
+    } catch (_) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Não foi possível trocar a foto. Tente novamente.')),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _isPickingAvatar = false);
+    }
+  }
+
+  /// Foto real (se o usuário já escolheu uma) ou o asset mock de sempre.
+  ImageProvider _avatarImageFor(User user, bool isMineUser) {
+    if (isMineUser && _ownAvatarBytes != null) {
+      return MemoryImage(_ownAvatarBytes!);
+    }
+    return AssetImage(user.avatar);
+  }
+
   @override
   Widget build(BuildContext context) {
     User user = Provider.of<UserProvider>(context).user;
@@ -165,7 +225,7 @@ class _PersonalPageScreenState extends State<PersonalPageScreen> {
                           ),
                         ),
                         child: CircleAvatar(
-                          backgroundImage: AssetImage(user.avatar),
+                          backgroundImage: _avatarImageFor(user, isMine),
                           radius: 75,
                         ),
                       ),
@@ -181,17 +241,26 @@ class _PersonalPageScreenState extends State<PersonalPageScreen> {
                         Positioned(
                           bottom: 0,
                           right: 0,
-                          child: Container(
-                              padding: const EdgeInsets.all(8),
-                              decoration: BoxDecoration(
-                                color: Colors.grey[200],
-                                shape: BoxShape.circle,
-                              ),
-                              child: const Icon(
-                                Icons.camera_alt_rounded,
-                                color: Colors.black,
-                                size: 22,
-                              )),
+                          child: GestureDetector(
+                            onTap: _pickAndSetAvatar,
+                            child: Container(
+                                padding: const EdgeInsets.all(8),
+                                decoration: BoxDecoration(
+                                  color: Colors.grey[200],
+                                  shape: BoxShape.circle,
+                                ),
+                                child: _isPickingAvatar
+                                    ? const SizedBox(
+                                        width: 22,
+                                        height: 22,
+                                        child: CircularProgressIndicator(strokeWidth: 2),
+                                      )
+                                    : const Icon(
+                                        Icons.camera_alt_rounded,
+                                        color: Colors.black,
+                                        size: 22,
+                                      )),
+                          ),
                         ),
                     ],
                   ),
@@ -1567,7 +1636,7 @@ class _PersonalPageScreenState extends State<PersonalPageScreen> {
                           right: 10,
                         ),
                         child: CircleAvatar(
-                          backgroundImage: AssetImage(user.avatar),
+                          backgroundImage: _avatarImageFor(user, isMine),
                           radius: 20,
                         ),
                       ),
