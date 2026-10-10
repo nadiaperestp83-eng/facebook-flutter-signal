@@ -1636,36 +1636,43 @@ class _PostCardState extends State<PostCard> {
                           children: [
                             SizedBox(
                               width: 42,
+                              // Post sem nenhuma reação (ex: momentos E2EE
+                              // recém-publicados): `icons` fica vazio porque
+                              // as contagens são null, não 0, e nenhuma
+                              // comparação acima bate. icons[0]/icons[1]
+                              // direto quebravam com RangeError aqui.
                               child: Stack(
                                 children: [
                                   const SizedBox(
                                     width: 24,
                                     height: 24,
                                   ),
-                                  Positioned(
-                                    top: 2,
-                                    left: 18,
-                                    child: Image.asset(
-                                      icons[1],
-                                      width: 20,
-                                    ),
-                                  ),
-                                  Positioned(
-                                    top: 0,
-                                    left: 0,
-                                    child: Container(
-                                      decoration: BoxDecoration(
-                                          shape: BoxShape.circle,
-                                          border: Border.all(
-                                            color: Colors.white,
-                                            width: 2,
-                                          )),
+                                  if (icons.length > 1)
+                                    Positioned(
+                                      top: 2,
+                                      left: 18,
                                       child: Image.asset(
-                                        icons[0],
+                                        icons[1],
                                         width: 20,
                                       ),
                                     ),
-                                  ),
+                                  if (icons.isNotEmpty)
+                                    Positioned(
+                                      top: 0,
+                                      left: 0,
+                                      child: Container(
+                                        decoration: BoxDecoration(
+                                            shape: BoxShape.circle,
+                                            border: Border.all(
+                                              color: Colors.white,
+                                              width: 2,
+                                            )),
+                                        child: Image.asset(
+                                          icons[0],
+                                          width: 20,
+                                        ),
+                                      ),
+                                    ),
                                 ],
                               ),
                             ),
