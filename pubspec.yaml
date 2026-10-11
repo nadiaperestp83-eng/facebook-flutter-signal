@@ -26,6 +26,8 @@ dependencies:
   supabase_flutter: ^2.3.4
   libsignal_protocol_dart: ^0.7.1 
   uuid: ^4.2.2
+  image_picker: ^1.1.2
+
 
 dev_dependencies:
   flutter_test:
