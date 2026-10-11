@@ -15,7 +15,7 @@ dependencies:
   provider: ^6.0.5
   video_player: ^2.9.2 # 2.7.1 resolvia num video_player_android antigo (API v1 removida no Flutter novo)
   carousel_slider: ^5.1.2 # 4.2.1 colidia com o CarouselController nativo do Flutter 3.24+
-  webview_flutter: ^4.2.4
+  webview_flutter: ^4.8.0
   smooth_video_progress: ^0.0.4
 
   # --- Feed Efêmero Local-First / E2EE ---
