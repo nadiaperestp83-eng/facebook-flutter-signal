@@ -25,7 +25,11 @@ jobs:
       - name: Configurar Flutter
         uses: subosito/flutter-action@v2
         with:
-          flutter-version: '3.24.0'
+          # Sem versão fixa: 3.24.0 tem um bug conhecido no carregamento
+          # declarativo de plugins do Gradle para subprojetos como o
+          # app_links (puxado por image_picker/supabase_flutter) —
+          # "Could not get unknown property 'flutter'". A stable mais
+          # recente já corrigiu isso.
           channel: 'stable'
           cache: true
 
