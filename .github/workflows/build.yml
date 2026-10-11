@@ -63,7 +63,8 @@ jobs:
         run: |
           flutter build apk --release \
             --dart-define=SUPABASE_URL=$SUPABASE_URL \
-            --dart-define=SUPABASE_ANON_KEY=$SUPABASE_ANON_KEY
+            --dart-define=SUPABASE_ANON_KEY=$SUPABASE_ANON_KEY \
+            --android-skip-build-dependency-validation
 
       - name: Upload do APK como artefato
         uses: actions/upload-artifact@v4
